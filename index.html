@@ -2,44 +2,252 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tela de Login Dinâmica</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Carlos Chaveiro - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        
+        body { 
+            background-color: #0A192F; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            color: white; 
+            transition: background 0.2s ease;
+        }
+        
+        .login-card { 
+            background: #172A45; 
+            padding: 40px; 
+            border-radius: 8px; 
+            width: 100%; 
+            max-width: 400px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            border-top: 5px solid #ffcc00; 
+            text-align: center; 
+        }
+        
+        .login-card h2 { color: #ffcc00; margin-bottom: 25px; font-size: 24px; }
+        .input-group { position: relative; margin-bottom: 20px; text-align: left; }
+        .input-group i { position: absolute; left: 15px; top: 38px; color: #8892b0; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #cbd5e1; }
+        input { width: 100%; padding: 12px 12px 12px 42px; border: 1px solid #233554; border-radius: 4px; background: #0A192F; color: white; font-size: 16px; }
+        input:focus { border-color: #ffcc00; outline: none; }
+        
+        .btn-login { 
+            background: #ffcc00; 
+            color: #0A192F; 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            margin-top: 10px; 
+        }
+        .btn-login:hover { background: #e6b800; }
+        
+        .toggle-link { display: inline-block; margin-top: 20px; color: #ffcc00; text-decoration: none; font-size: 14px; cursor: pointer; }
+        .toggle-link:hover { text-decoration: underline; }
+
+        /* Estados da Atividade (Sucesso e Erro) */
+        .escondido { display: none !important; }
+        
+        .icone-grande { font-size: 70px; margin-bottom: 15px; display: block; }
+        .icone-presente { color: #28a745; animation: balancar 0.6s infinite alternate ease-in-out; }
+        .icone-alerta { color: #ffcc00; }
+        
+        @keyframes balancar {
+            from { transform: rotate(-6deg); }
+            to { transform: rotate(6deg); }
+        }
+
+        /* Animação Tela Piscando em Vermelho */
+        .piscar-vermelho {
+            animation: alerta-pisca 0.4s infinite !important;
+        }
+        @keyframes alerta-pisca {
+            0%, 100% { background-color: #0A192F; }
+            50% { background-color: #b91c1c; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- 1. TELA DE LOGIN -->
-    <div id="tela-login" class="card">
-        <h2>Área de Acesso</h2>
-        <form id="form-login">
-            <div class="campo">
-                <label for="usuario">Usuário:</label>
-                <input type="text" id="usuario" placeholder="Digite seu usuário" required>
+    <!-- 1. TELA DE LOGIN PRINCIPAL -->
+    <div class="login-card" id="card-login">
+        <h2><i class="fa-solid fa-key"></i> Carlos Chaveiro</h2>
+        <form id="form-login" onsubmit="realizarLogin(event)">
+            <div class="input-group">
+                <label>Usuário:</label>
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="user-input" required placeholder="Digite seu usuário">
             </div>
-            <div class="campo">
-                <label for="senha">Senha:</label>
-                <input type="password" id="senha" placeholder="Digite sua senha" required>
+            <div class="input-group">
+                <label>Senha:</label>
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="pass-input" required placeholder="Digite sua senha">
             </div>
-            <button type="submit">Entrar</button>
+            <button type="submit" class="btn-login">ACESSAR SISTEMA</button>
         </form>
+        <span class="toggle-link" onclick="alternarTelas('cadastro')">Não tem uma conta? Criar novo usuário</span>
     </div>
 
-    <!-- 2. TELA DE SUCESSO (Login Positivo) -->
-    <div id="tela-sucesso" class="card escondido">
-        <div class="icone-presente">🎁</div>
-        <h1>Parabéns!</h1>
-        <p>Você logou com sucesso.</p>
-        <button onclick="voltar()">Voltar</button>
+    <!-- 2. TELA DE CADASTRO -->
+    <div class="login-card escondido" id="card-cadastro" style="border-top-color: #28a745;">
+        <h2><i class="fa-solid fa-user-plus"></i> Novo Usuário</h2>
+        <form id="form-cadastro" onsubmit="cadastrarUsuario(event)">
+            <div class="input-group">
+                <label>Nome do Funcionário/Operador:</label>
+                <i class="fa-solid fa-id-card"></i>
+                <input type="text" id="cad-nome" required placeholder="Ex: João Chaveiro">
+            </div>
+            <div class="input-group">
+                <label>Usuário (Login):</label>
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="cad-user" required placeholder="Ex: joao123">
+            </div>
+            <div class="input-group">
+                <label>Senha de Acesso:</label>
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="cad-pass" required placeholder="Digite uma senha">
+            </div>
+            <button type="submit" class="btn-login" style="background: #28a745; color: white;">SALVAR REGISTRO</button>
+        </form>
+        <span class="toggle-link" onclick="alternarTelas('login')" style="color: #cbd5e1;">Voltar para o Login</span>
     </div>
 
-    <!-- 3. TELA DE ERRO (Login Negativo) -->
-    <div id="tela-erro" class="card escondido">
-        <div class="icone-alerta">⚠️</div>
-        <h1>Atenção!</h1>
-        <p>Usuário ou senha incorretos.</p>
-        <button onclick="voltar()">Tentar Novamente</button>
+    <!-- 3. TELA DE LOGIN POSITIVO (Sucesso) -->
+    <div class="login-card escondido" id="card-sucesso" style="border-top-color: #28a745;">
+        <i class="fa-solid fa-gift icone-grande icone-presente"></i>
+        <h2>Parabéns!</h2>
+        <p style="margin-bottom: 20px; color: #cbd5e1;">Login efetuado com sucesso no sistema.</p>
+        <button class="btn-login" style="background: #28a745; color: white;" onclick="voltarParaLogin()">SAIR / VOLTAR</button>
     </div>
 
-    <script src="script.js"></script>
+    <!-- 4. TELA DE LOGIN NEGATIVO (Erro) -->
+    <div class="login-card escondido" id="card-erro" style="border-top-color: #ff3333; background: #2a1414;">
+        <i class="fa-solid fa-triangle-exclamation icone-grande icone-alerta"></i>
+        <h2>Atenção!</h2>
+        <p style="margin-bottom: 20px; color: #cbd5e1;">Usuário ou senha incorretos!</p>
+        <button class="btn-login" style="background: #ff3333; color: white;" onclick="voltarParaLogin()">TENTAR NOVAMENTE</button>
+    </div>
+
+    <!-- SCRIPT DE LOGICA BANCO DE DADOS + VALIDACAO -->
+    <script>
+        let bancoDados;
+
+        // Inicializa o banco de dados local do navegador
+        function iniciarBanco() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('BancoCarlosChaveiro', 1);
+                
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('usuarios')) {
+                        db.createObjectStore('usuarios', { keyPath: 'usuario' });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    bancoDados = e.target.result;
+                    resolve();
+                };
+
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        window.onload = async () => {
+            try {
+                await iniciarBanco();
+                
+                const trans = bancoDados.transaction(['usuarios'], 'readwrite');
+                const store = trans.objectStore('usuarios');
+                
+                store.getAll().onsuccess = function(e) {
+                    // SE ESTIVER VAZIO OU COM CADASTROS ANTIGOS, ATUALIZA APENAS PARA O ADMIN SELECIONADO
+                    if(e.target.result.length === 0 || e.target.result.some(u => u.senha === '123')) {
+                        store.clear(); // Limpa resíduos antigos
+                        // Injeta APENAS o admin com a senha 1234 solicitada
+                        store.add({ usuario: 'admin', senha: '1234', nome: 'Carlos Administrador' });
+                    }
+                };
+            } catch(e) { console.error(e); }
+        };
+
+        function alternarTelas(tela) {
+            document.getElementById('card-login').classList.add('escondido');
+            document.getElementById('card-cadastro').classList.add('escondido');
+            document.getElementById('card-sucesso').classList.add('escondido');
+            document.getElementById('card-erro').classList.add('escondido');
+
+            if(tela === 'cadastro') {
+                document.getElementById('card-cadastro').classList.remove('escondido');
+            } else if(tela === 'login') {
+                document.getElementById('card-login').classList.remove('escondido');
+            } else if(tela === 'sucesso') {
+                document.getElementById('card-sucesso').classList.remove('escondido');
+            } else if(tela === 'erro') {
+                document.getElementById('card-erro').classList.remove('escondido');
+            }
+        }
+
+        function cadastrarUsuario(e) {
+            e.preventDefault();
+            const nome = document.getElementById('cad-nome').value;
+            const usuario = document.getElementById('cad-user').value;
+            const senha = document.getElementById('cad-pass').value;
+
+            const trans = bancoDados.transaction(['usuarios'], 'readwrite');
+            const store = trans.objectStore('usuarios');
+
+            store.add({ nome, usuario, senha }).onsuccess = function() {
+                document.getElementById('form-cadastro').reset();
+                alert('Usuário cadastrado com sucesso!');
+                alternarTelas('login');
+            };
+        }
+
+        function realizarLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('user-input').value;
+            const s = document.getElementById('pass-input').value;
+
+            const store = bancoDados.transaction(['usuarios'], 'readonly').objectStore('usuarios');
+            let encontrado = false;
+
+            store.openCursor().onsuccess = function(event) {
+                const cursor = event.target.result;
+                if(cursor) {
+                    if(cursor.value.usuario === u && cursor.value.senha === s) {
+                        encontrado = true;
+                        localStorage.setItem('operadorAtivo', cursor.value.nome);
+                        
+                        // LOGIN POSITIVO: Mostra o presente animado e a mensagem de parabéns
+                        alternarTelas('sucesso');
+                        return;
+                    }
+                    cursor.continue();
+                } else {
+                    if (!encontrado) { 
+                        // LOGIN NEGATIVO: Ativa o fundo piscando em vermelho e exibe a advertência
+                        alternarTelas('erro');
+                        document.body.classList.add('piscar-vermelho');
+                    }
+                }
+            };
+        }
+
+        function voltarParaLogin() {
+            // Remove a animação de piscar vermelho do fundo
+            document.body.classList.remove('piscar-vermelho');
+            document.getElementById('form-login').reset();
+            alternarTelas('login');
+        }
+    </script>
 </body>
 </html>
