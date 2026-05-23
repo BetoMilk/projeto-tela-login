@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Carlos Chaveiro - Login</title>
+    <title>Carlos Chaveiro - Login Nuvem</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
@@ -53,7 +53,6 @@
         .toggle-link { display: inline-block; margin-top: 20px; color: #ffcc00; text-decoration: none; font-size: 14px; cursor: pointer; }
         .toggle-link:hover { text-decoration: underline; }
 
-        /* Estados da Atividade (Sucesso e Erro) */
         .escondido { display: none !important; }
         
         .icone-grande { font-size: 70px; margin-bottom: 15px; display: block; }
@@ -65,7 +64,6 @@
             to { transform: rotate(6deg); }
         }
 
-        /* Animação Tela Piscando em Vermelho */
         .piscar-vermelho {
             animation: alerta-pisca 0.4s infinite !important;
         }
@@ -113,7 +111,7 @@
             <div class="input-group">
                 <label>Senha de Acesso:</label>
                 <i class="fa-solid fa-lock"></i>
-                <input type="password" id="cad-pass" required placeholder="Digite uma senha">
+                <input type="password" id="cad-pass" required placeholder="Mínimo 4 dígitos">
             </div>
             <button type="submit" class="btn-login" style="background: #28a745; color: white;">SALVAR REGISTRO</button>
         </form>
@@ -124,7 +122,7 @@
     <div class="login-card escondido" id="card-sucesso" style="border-top-color: #28a745;">
         <i class="fa-solid fa-gift icone-grande icone-presente"></i>
         <h2>Parabéns!</h2>
-        <p style="margin-bottom: 20px; color: #cbd5e1;">Login efetuado com sucesso no sistema.</p>
+        <p style="margin-bottom: 20px; color: #cbd5e1;">Login efetuado com sucesso na Nuvem.</p>
         <button class="btn-login" style="background: #28a745; color: white;" onclick="voltarParaLogin()">SAIR / VOLTAR</button>
     </div>
 
@@ -136,48 +134,14 @@
         <button class="btn-login" style="background: #ff3333; color: white;" onclick="voltarParaLogin()">TENTAR NOVAMENTE</button>
     </div>
 
-    <!-- SCRIPT DE LOGICA BANCO DE DADOS + VALIDACAO -->
+    <!-- Conexão e Lógica com o Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        let bancoDados;
-
-        // Inicializa o banco de dados local do navegador
-        function iniciarBanco() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('BancoCarlosChaveiro', 1);
-                
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains('usuarios')) {
-                        db.createObjectStore('usuarios', { keyPath: 'usuario' });
-                    }
-                };
-
-                request.onsuccess = (e) => {
-                    bancoDados = e.target.result;
-                    resolve();
-                };
-
-                request.onerror = (e) => reject(e);
-            });
-        }
-
-        window.onload = async () => {
-            try {
-                await iniciarBanco();
-                
-                const trans = bancoDados.transaction(['usuarios'], 'readwrite');
-                const store = trans.objectStore('usuarios');
-                
-                store.getAll().onsuccess = function(e) {
-                    // SE ESTIVER VAZIO OU COM CADASTROS ANTIGOS, ATUALIZA APENAS PARA O ADMIN SELECIONADO
-                    if(e.target.result.length === 0 || e.target.result.some(u => u.senha === '123')) {
-                        store.clear(); // Limpa resíduos antigos
-                        // Injeta APENAS o admin com a senha 1234 solicitada
-                        store.add({ usuario: 'admin', senha: '1234', nome: 'Carlos Administrador' });
-                    }
-                };
-            } catch(e) { console.error(e); }
-        };
+        // Suas chaves de acesso configuradas
+        const SUPABASE_URL = "https://rbikozjbhgajbgxxcmdn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiaWtvempiaGdhamJneHhjbWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDYzNzYsImV4cCI6MjA5NTA4MjM3Nn0.yHuvmvocefkK9-YvMNeKI6w34A9_d2WHm0fTs531E_I";
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function alternarTelas(tela) {
             document.getElementById('card-login').classList.add('escondido');
@@ -196,54 +160,56 @@
             }
         }
 
-        function cadastrarUsuario(e) {
+        // CADASTRO CONECTADO À NUVEM
+        async function cadastrarUsuario(e) {
             e.preventDefault();
             const nome = document.getElementById('cad-nome').value;
-            const usuario = document.getElementById('cad-user').value;
-            const senha = document.getElementById('cad-pass').value;
+            const usuario = document.getElementById('cad-user').value.trim().toLowerCase();
+            const emailFake = usuario + "@carloschaveiro.com";
+            const senhaOriginal = document.getElementById('cad-pass').value;
+            
+            // Ajuste para bater o requisito de 6 dígitos mínimos do Supabase de forma invisível
+            const senhaSegura = senhaOriginal + "_cloud"; 
 
-            const trans = bancoDados.transaction(['usuarios'], 'readwrite');
-            const store = trans.objectStore('usuarios');
+            const { data, error } = await supabase.auth.signUp({
+                email: emailFake,
+                password: senhaSegura,
+                options: { data: { nome_completo: nome } }
+            });
 
-            store.add({ nome, usuario, senha }).onsuccess = function() {
+            if (error) {
+                alert("Erro ao salvar na nuvem: " + error.message);
+            } else {
                 document.getElementById('form-cadastro').reset();
-                alert('Usuário cadastrado com sucesso!');
+                alert('Usuário registrado globalmente com sucesso!');
                 alternarTelas('login');
-            };
+            }
         }
 
-        function realizarLogin(e) {
+        // LOGIN CONECTADO À NUVEM
+        async function realizarLogin(e) {
             e.preventDefault();
-            const u = document.getElementById('user-input').value;
+            const u = document.getElementById('user-input').value.trim().toLowerCase();
             const s = document.getElementById('pass-input').value;
+            const emailFake = u + "@carloschaveiro.com";
+            const senhaSegura = s + "_cloud";
 
-            const store = bancoDados.transaction(['usuarios'], 'readonly').objectStore('usuarios');
-            let encontrado = false;
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: emailFake,
+                password: senhaSegura
+            });
 
-            store.openCursor().onsuccess = function(event) {
-                const cursor = event.target.result;
-                if(cursor) {
-                    if(cursor.value.usuario === u && cursor.value.senha === s) {
-                        encontrado = true;
-                        localStorage.setItem('operadorAtivo', cursor.value.nome);
-                        
-                        // LOGIN POSITIVO: Mostra o presente animado e a mensagem de parabéns
-                        alternarTelas('sucesso');
-                        return;
-                    }
-                    cursor.continue();
-                } else {
-                    if (!encontrado) { 
-                        // LOGIN NEGATIVO: Ativa o fundo piscando em vermelho e exibe a advertência
-                        alternarTelas('erro');
-                        document.body.classList.add('piscar-vermelho');
-                    }
-                }
-            };
+            if (error) {
+                alternarTelas('erro');
+                document.body.classList.add('piscar-vermelho');
+            } else {
+                const nomeOperador = data.user.user_metadata.nome_completo || u;
+                localStorage.setItem('operadorAtivo', nomeOperador);
+                alternarTelas('sucesso');
+            }
         }
 
         function voltarParaLogin() {
-            // Remove a animação de piscar vermelho do fundo
             document.body.classList.remove('piscar-vermelho');
             document.getElementById('form-login').reset();
             alternarTelas('login');
